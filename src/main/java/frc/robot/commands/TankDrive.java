@@ -56,7 +56,7 @@ public class TankDrive extends CommandBase {
     m_drive.setRightMotorSpeed(rightJoystickSpeed);
     m_drive.setLeftMotorSpeed(leftJoystickSpeed);
 
-    SmartDashboard.putNumber("Right JoyStck", rightJoystickSpeed);
+    SmartDashboard.putNumber("Right JoyStick", rightJoystickSpeed);
     SmartDashboard.putNumber("Left JoyStick", leftJoystickSpeed);
 
     double leftCurrent = m_drive.getleftMotoCurrnt();

@@ -7,6 +7,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.commands.DriveDistance;
+import frc.robot.commands.Auto.DriveSquareAuto;
 //import frc.robot.auto.AutoDriveTest;
 import frc.robot.commands.TankDrive;
 import frc.robot.subsystems.Drive;
@@ -26,7 +28,8 @@ public class RobotContainer {
    private final Drive drive;
    /** The container for the robot. Contains subsystems, OI devices, and commands. */
    //Commands
-   private final TankDrive tankdrive;
+   private final TankDrive tankDrive;
+   private final DriveSquareAuto driveSquareAuto;
    
    //AutoDriveTest autoDriveTest;
    
@@ -41,13 +44,19 @@ public class RobotContainer {
     drive = Drive.getInstance();
 
    //Default command instantiation
-   tankdrive = new TankDrive(drive);
-   drive.setDefaultCommand(tankdrive);
+   tankDrive = new TankDrive(drive);
+   driveSquareAuto = new DriveSquareAuto();
+   drive.setDefaultCommand(tankDrive);
+
+    //OI Device instantiation
+    OI.getInstance();
+
+   DriveDistance.registerWithTestingDashboard();
+   DriveSquareAuto.registerWithTestingDashboard(); 
 
   //autoDriveTest = new AutoDriveTest(drive);
-
-     //OI Device instantiation
-    OI.getInstance();
+  TestingDashboard.getInstance().createTestingDashboard();
+    
   }
 
   /**
@@ -75,4 +84,14 @@ public static RobotContainer getInstance() {
   } 
   return robotContainer;
 }
+
+public Command getAutonomousCommand() {
+  // TODO: This needs to be changed to collect the autonomous command
+  // from a chooser on ShuffleBoard
+  // Create a voltage constraint to ensure we don't accelerate too fast
+  return driveSquareAuto;
+  // Run path following command, then stop at the end.
+  //return ramseteCommand.andThen(() -> drive.tankDriveVolts(0, 0));
+}
+
 }

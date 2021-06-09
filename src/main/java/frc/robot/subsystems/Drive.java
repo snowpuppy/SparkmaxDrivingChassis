@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import frc.robot.RobotMap;
+import frc.robot.TestingDashboard;
 
 import com.analog.adis16470.frc.ADIS16470_IMU;
 
@@ -26,8 +27,15 @@ public class Drive extends SubsystemBase {
 
   private static Drive drive;
 
+  public static final double WHEEL_DIAMETER_IN_INCHES = 4; 
+  public static final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER_IN_INCHES * Math.PI;
+  public static final double GEAR_RATIO = 8.68; //number of times the motor rotates to rotate wheel once
+  public static final double CONVERSION_FACTOR = WHEEL_CIRCUMFERENCE / GEAR_RATIO; //conversion factor * circumference = distance
+  public final static double DISTANCE = CONVERSION_FACTOR * WHEEL_CIRCUMFERENCE;
+  public final static double INITIAL_SPEED = 0.3;
+
   /** Creates a new Drive. */
-  public Drive() {
+  private Drive() {
 
     /**
      * SPARK MAX controllers are intialized over CAN by constructing a CANSparkMax
@@ -61,6 +69,8 @@ public class Drive extends SubsystemBase {
 
     m_leftMotor1.setInverted(true);
     m_rightMotor1.setInverted(false);
+
+
   
     if(m_leftMotor1.setIdleMode(IdleMode.kBrake) != CANError.kOk){
       SmartDashboard.putString("Left Motor1 Idle Mode ", "Error");
@@ -76,7 +86,15 @@ public class Drive extends SubsystemBase {
   
     if(m_rightEncoder1.setPositionConversionFactor(1.4476) != CANError.kOk){
       SmartDashboard.putString("Right Conversion Factor ", "Error");
+    } 
+  }
+
+  public static Drive getInstance() {
+    if (drive == null) {
+      drive = new Drive();
+      TestingDashboard.getInstance().registerSubsystem(drive, "Drive");
     }
+    return drive;
   }
 
   @Override
@@ -140,6 +158,17 @@ public class Drive extends SubsystemBase {
     return  m_leftEncoder1.getPosition();
    } 
 
+   public CANEncoder getRightEncoder() {
+    return m_rightEncoder1;
+  }
+
+   public CANEncoder getLeftEncoder() {
+     return m_leftEncoder1;
+   }
+
+ 
+
+
    public void setIdleMode(IdleMode mode) {
      SmartDashboard.putString("Brake Mode", mode == IdleMode.kBrake? "Brake":"Coast");
      m_leftMotor1.setIdleMode(mode);
@@ -159,11 +188,5 @@ public class Drive extends SubsystemBase {
       m_imu.reset();
 }
 
-public static Drive getInstance() {
-  if (drive == null) {
-    drive = new Drive();
-  }
-  return drive;
-} 
 
 }
