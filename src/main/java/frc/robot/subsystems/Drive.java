@@ -10,6 +10,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -73,19 +74,23 @@ public class Drive extends SubsystemBase {
 
   
     if(m_leftMotor1.setIdleMode(IdleMode.kBrake) != CANError.kOk){
-      SmartDashboard.putString("Left Motor1 Idle Mode ", "Error");
+      System.out.println("Could not set idle mode on left motor 1 ");
+      System.exit(1);
     }
   
     if(m_rightMotor1.setIdleMode(IdleMode.kBrake) != CANError.kOk){
-      SmartDashboard.putString("Right Motor1 Idle Mode ", "Error");
+      System.out.println("Could not set idle mode on right motor 1 ");
+      System.exit(1);
     }
   
-    if(m_leftEncoder1.setPositionConversionFactor(1.4476) != CANError.kOk){
-      SmartDashboard.putString("Left Conversion Factor ", "Error");
+    if(m_leftEncoder1.setPositionConversionFactor(CONVERSION_FACTOR) != CANError.kOk){ 
+      System.out.println("Could not set position conversion factor on left encoder 1");
+      System.exit(1);
     }
   
-    if(m_rightEncoder1.setPositionConversionFactor(1.4476) != CANError.kOk){
-      SmartDashboard.putString("Right Conversion Factor ", "Error");
+    if(m_rightEncoder1.setPositionConversionFactor(CONVERSION_FACTOR) != CANError.kOk){
+      System.out.println("Could not set position conversion factor on right encoder 1");
+      System.exit(1);
     } 
   }
 
@@ -93,6 +98,9 @@ public class Drive extends SubsystemBase {
     if (drive == null) {
       drive = new Drive();
       TestingDashboard.getInstance().registerSubsystem(drive, "Drive");
+      TestingDashboard.getInstance().registerNumber(drive, "Encoders", "RightMotorDistance", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "Encoders", "LeftMotorDistance", 0);
+
     }
     return drive;
   }
@@ -100,6 +108,9 @@ public class Drive extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    TestingDashboard.getInstance().updateNumber(drive, "RightMotorDistance", getrightMotorPosition());
+    TestingDashboard.getInstance().updateNumber(drive, "LeftMotorDistance", getleftMotorPosition());
+
   }
   
   public void setRightMotorSpeed(double speed){
