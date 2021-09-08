@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Auto;
 
 /**
  * This class sets up a testing dashboard using
@@ -284,4 +285,7 @@ public class TestingDashboard {
  
   public void updateDebugTab() {
   }
+
+public void registerNumber(Auto auto, String dataGrpName, String dataName, String string) {
+}
 }

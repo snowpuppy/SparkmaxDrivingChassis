@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.DriveDistance;
+import frc.robot.commands.DriveDistanceSim;
+import frc.robot.commands.GyroTurn;
 import frc.robot.commands.Auto.DriveSquareAuto;
 //import frc.robot.auto.AutoDriveTest;
 import frc.robot.commands.TankDrive;
@@ -52,6 +54,8 @@ public class RobotContainer {
     OI.getInstance();
 
    DriveDistance.registerWithTestingDashboard();
+   DriveDistanceSim.registerWithTestingDashboard();
+   GyroTurn.registerWithTestingDashboard();
    DriveSquareAuto.registerWithTestingDashboard(); 
 
   //autoDriveTest = new AutoDriveTest(drive);

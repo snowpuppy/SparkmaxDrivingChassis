@@ -34,6 +34,8 @@ public class Drive extends SubsystemBase {
   public static final double CONVERSION_FACTOR = WHEEL_CIRCUMFERENCE / GEAR_RATIO; //conversion factor * circumference = distance
   public final static double DISTANCE = CONVERSION_FACTOR * WHEEL_CIRCUMFERENCE;
   public final static double INITIAL_SPEED = 0.3;
+  public final static double INITIAL_DISTANCE = 12;
+  public final static double INITIAL_DEGREES = 90;
 
   /** Creates a new Drive. */
   private Drive() {
@@ -72,7 +74,7 @@ public class Drive extends SubsystemBase {
     m_rightMotor1.setInverted(false);
 
 
-  
+  /** 
     if(m_leftMotor1.setIdleMode(IdleMode.kBrake) != CANError.kOk){
       System.out.println("Could not set idle mode on left motor 1 ");
       System.exit(1);
@@ -85,13 +87,19 @@ public class Drive extends SubsystemBase {
   
     if(m_leftEncoder1.setPositionConversionFactor(CONVERSION_FACTOR) != CANError.kOk){ 
       System.out.println("Could not set position conversion factor on left encoder 1");
-      System.exit(1);
+      //System.exit(1);
     }
   
     if(m_rightEncoder1.setPositionConversionFactor(CONVERSION_FACTOR) != CANError.kOk){
       System.out.println("Could not set position conversion factor on right encoder 1");
-      System.exit(1);
+      //System.exit(1);
     } 
+  */
+    m_leftMotor1.setIdleMode(IdleMode.kBrake);
+    m_rightMotor1.setIdleMode(IdleMode.kBrake);
+    m_leftEncoder1.setPositionConversionFactor(CONVERSION_FACTOR);
+    m_rightEncoder1.setPositionConversionFactor(CONVERSION_FACTOR);
+
   }
 
   public static Drive getInstance() {
@@ -100,7 +108,13 @@ public class Drive extends SubsystemBase {
       TestingDashboard.getInstance().registerSubsystem(drive, "Drive");
       TestingDashboard.getInstance().registerNumber(drive, "Encoders", "RightMotorDistance", 0);
       TestingDashboard.getInstance().registerNumber(drive, "Encoders", "LeftMotorDistance", 0);
-
+      TestingDashboard.getInstance().registerNumber(drive, "MotorSpeed", "RightMotorSpeed", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "MotorSpeed", "LeftMotorSpeed", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "Gyro", "CurrentAngle", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "Data", "leftVelocity", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "Data", "rightVelocity", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "Data", "actualDistance", 0);
+      TestingDashboard.getInstance().registerNumber(drive, "Data", "stoppingDistance", 0);
     }
     return drive;
   }
@@ -110,6 +124,17 @@ public class Drive extends SubsystemBase {
     // This method will be called once per scheduler run
     TestingDashboard.getInstance().updateNumber(drive, "RightMotorDistance", getrightMotorPosition());
     TestingDashboard.getInstance().updateNumber(drive, "LeftMotorDistance", getleftMotorPosition());
+    TestingDashboard.getInstance().updateNumber(drive, "RightMotorSpeed", m_rightMotor1.get());
+    TestingDashboard.getInstance().updateNumber(drive, "LeftMotorSpeed", m_leftMotor1.get());
+    TestingDashboard.getInstance().updateNumber(drive, "CurrentAngle", m_imu.getAngle());
+
+    CANEncoder leftEncoder = drive.getLeftEncoder();
+    CANEncoder rightEncoder = drive.getRightEncoder();
+    TestingDashboard.getInstance().updateNumber(drive, "leftVelocity", leftEncoder.getVelocity());
+    TestingDashboard.getInstance().updateNumber(drive, "rightVelocity", rightEncoder.getVelocity());
+    //TestingDashboard.getInstance().updateNumber(drive, "actualDistance", drive.getrightMotorPosition());
+    //TestingDashboard.getInstance().updateNumber(drive, "stoppingDistance", drive.getrightMotorPosition() - TestingDashboard.getInstance().getNumber(drive, "drivingDistance"));
+
 
   }
   
