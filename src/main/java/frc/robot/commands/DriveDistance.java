@@ -12,10 +12,10 @@ import frc.robot.TestingDashboard;
 import frc.robot.subsystems.Drive;
 
 public class DriveDistance extends CommandBase {
-  static Drive m_drive;
-  boolean m_parameterized;
-  double m_distance;
-  double m_speed;
+  protected static Drive m_drive;
+  protected boolean m_parameterized;
+  protected double m_distance;
+  protected double m_speed;
   
 
   /** Creates a new DriveDistance. */
@@ -35,9 +35,7 @@ public class DriveDistance extends CommandBase {
     Drive drive = Drive.getInstance();
     DriveDistance cmd = new DriveDistance(Drive.INITIAL_SPEED, Drive.INITIAL_SPEED, false);
     TestingDashboard.getInstance().registerCommand(drive, "DriveDistance", cmd);
-    TestingDashboard.getInstance().registerNumber(drive, "DriveDistance", "drivingSpeed", Drive.INITIAL_SPEED);
-    TestingDashboard.getInstance().registerNumber(drive, "DriveDistance", "drivingDistance", Drive.INITIAL_DISTANCE);
-  
+    
 
   }
 

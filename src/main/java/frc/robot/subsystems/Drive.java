@@ -10,6 +10,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -18,6 +19,7 @@ import frc.robot.RobotMap;
 import frc.robot.TestingDashboard;
 
 import com.analog.adis16470.frc.ADIS16470_IMU;
+import edu.wpi.first.wpilibj.Timer;
 
 public class Drive extends SubsystemBase {
   private CANSparkMax m_leftMotor1;
@@ -25,8 +27,18 @@ public class Drive extends SubsystemBase {
   private CANEncoder m_rightEncoder1;
   private CANEncoder m_leftEncoder1;
   private ADIS16470_IMU m_imu;
+  private double[] accelValues;
+  private double[] timeValues;
+  private double[] velocityValues;
+  private double[] distanceValues;
+  private double xDirection;
+  private double yDirection;
+  private boolean m_measureVelocity;
+  private boolean m_measureDistance;
+  
+  
 
-  private static Drive drive;
+  private static Drive m_drive;
 
   public static final double WHEEL_DIAMETER_IN_INCHES = 4; 
   public static final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER_IN_INCHES * Math.PI;
@@ -60,6 +72,15 @@ public class Drive extends SubsystemBase {
 
     m_leftEncoder1 = m_leftMotor1.getEncoder();
     m_rightEncoder1 = m_rightMotor1.getEncoder();
+
+    accelValues = new double[2];
+    timeValues = new double[2];
+    velocityValues = new double[2];
+    distanceValues = new double[2];
+
+    m_measureVelocity = false;
+    m_measureDistance = false;
+
 
     /**
      * The RestoreFactoryDefaults method can be used to reset the configuration parameters
@@ -103,37 +124,110 @@ public class Drive extends SubsystemBase {
   }
 
   public static Drive getInstance() {
-    if (drive == null) {
-      drive = new Drive();
-      TestingDashboard.getInstance().registerSubsystem(drive, "Drive");
-      TestingDashboard.getInstance().registerNumber(drive, "Encoders", "RightMotorDistance", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "Encoders", "LeftMotorDistance", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "MotorSpeed", "RightMotorSpeed", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "MotorSpeed", "LeftMotorSpeed", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "Gyro", "CurrentAngle", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "Data", "leftVelocity", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "Data", "rightVelocity", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "Data", "actualDistance", 0);
-      TestingDashboard.getInstance().registerNumber(drive, "Data", "stoppingDistance", 0);
+    if (m_drive == null) {
+      m_drive = new Drive();
+      TestingDashboard.getInstance().registerSubsystem(m_drive, "Drive");
+      TestingDashboard.getInstance().registerNumber(m_drive, "Encoders", "RightMotorDistance", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Encoders", "LeftMotorDistance", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "MotorSpeed", "RightMotorSpeed", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "MotorSpeed", "LeftMotorSpeed", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Gyro", "CurrentAngle", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Data", "leftVelocity", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Data", "rightVelocity", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Data", "actualDistance", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Data", "stoppingDistance", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "DriveDistance", "drivingSpeed", Drive.INITIAL_SPEED);
+      TestingDashboard.getInstance().registerNumber(m_drive, "DriveDistance", "drivingDistance", Drive.INITIAL_DISTANCE);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "instantAccel", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "currentTime", 0);
+      
     }
-    return drive;
+    return m_drive;
+  }
+
+
+  public double getAccelerometerMagnitude() {
+    double x = m_imu.getAccelInstantX();
+    double y = m_imu.getAccelInstantY();
+    double magnitude = Math.sqrt(x*x + y*y);
+    return magnitude;
+  }
+
+  public static double integrate(double tInitial, double tFinal, double vInitial, double vFinal) { // v for value
+    double tInterval = tFinal - tInitial;
+    double area = (tInterval * (vInitial + vFinal)) / 2;
+    return area;
+}
+
+  public void startMeasuringVelocity() {
+    m_measureVelocity = true;
+  }
+
+  
+  public void stopMeasuringVelocity() {
+    m_measureVelocity = false;
+  }
+
+  
+  public void startMeasuringDistance() {
+    m_measureDistance = true;
+  }
+
+  
+  public void stopMeasuringDistance() {
+    m_measureDistance = false;
+  }
+
+  public void setInitialVelocity(double velocity) {
+    velocityValues[0] = velocity;
+  }
+
+  public void setInitialDistance(double distance) {
+    distanceValues[0] = distance;
+  }
+
+  public void updateXYDirections() {
+    double angle = m_imu.getAngle(); 
+    angle = Math.toRadians(angle);
+    xDirection = Math.cos(angle);
+    yDirection = Math.sin(angle);
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    TestingDashboard.getInstance().updateNumber(drive, "RightMotorDistance", getrightMotorPosition());
-    TestingDashboard.getInstance().updateNumber(drive, "LeftMotorDistance", getleftMotorPosition());
-    TestingDashboard.getInstance().updateNumber(drive, "RightMotorSpeed", m_rightMotor1.get());
-    TestingDashboard.getInstance().updateNumber(drive, "LeftMotorSpeed", m_leftMotor1.get());
-    TestingDashboard.getInstance().updateNumber(drive, "CurrentAngle", m_imu.getAngle());
+    m_drive.updateXYDirections();
+    accelValues[0] = accelValues[1];
+    accelValues[1] = -1 * m_drive.getAccelerometerMagnitude(); // assume always slowing down
+    timeValues[0] = timeValues[1];
+    timeValues[1] = Timer.getFPGATimestamp();
 
-    CANEncoder leftEncoder = drive.getLeftEncoder();
-    CANEncoder rightEncoder = drive.getRightEncoder();
-    TestingDashboard.getInstance().updateNumber(drive, "leftVelocity", leftEncoder.getVelocity());
-    TestingDashboard.getInstance().updateNumber(drive, "rightVelocity", rightEncoder.getVelocity());
-    //TestingDashboard.getInstance().updateNumber(drive, "actualDistance", drive.getrightMotorPosition());
-    //TestingDashboard.getInstance().updateNumber(drive, "stoppingDistance", drive.getrightMotorPosition() - TestingDashboard.getInstance().getNumber(drive, "drivingDistance"));
+    if (m_measureVelocity) {
+      double oldVelocity = velocityValues[0];
+      velocityValues[0] = velocityValues[1];
+      velocityValues[1] = oldVelocity + integrate(timeValues[0], timeValues[1], accelValues[0], accelValues[1]);
+    }
+
+    if (m_measureDistance) {
+      double oldDistance = distanceValues[0];
+      distanceValues[0] = distanceValues[1];
+      distanceValues[1] = oldDistance + integrate(timeValues[0], timeValues[1], velocityValues[0], velocityValues[1]);
+    }
+
+    TestingDashboard.getInstance().updateNumber(m_drive, "RightMotorDistance", getrightMotorPosition());
+    TestingDashboard.getInstance().updateNumber(m_drive, "LeftMotorDistance", getleftMotorPosition());
+    TestingDashboard.getInstance().updateNumber(m_drive, "RightMotorSpeed", m_rightMotor1.get());
+    TestingDashboard.getInstance().updateNumber(m_drive, "LeftMotorSpeed", m_leftMotor1.get());
+    TestingDashboard.getInstance().updateNumber(m_drive, "CurrentAngle", m_imu.getAngle());
+    TestingDashboard.getInstance().updateNumber(m_drive, "instantAccel", accelValues[1]);
+    TestingDashboard.getInstance().updateNumber(m_drive, "currentTime", timeValues[1]);
+
+    CANEncoder leftEncoder = m_drive.getLeftEncoder();
+    CANEncoder rightEncoder = m_drive.getRightEncoder();
+    TestingDashboard.getInstance().updateNumber(m_drive, "leftVelocity", leftEncoder.getVelocity());
+    TestingDashboard.getInstance().updateNumber(m_drive, "rightVelocity", rightEncoder.getVelocity());
+    //TestingDashboard.getInstance().updateNumber(m_drive, "actualDistance", m_drive.getrightMotorPosition());
+    //TestingDashboard.getInstance().updateNumber(m_drive, "stoppingDistance", m_drive.getrightMotorPosition() - TestingDashboard.getInstance().getNumber(m_drive, "drivingDistance"));
 
 
   }
