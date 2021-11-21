@@ -3,7 +3,6 @@ package frc.robot.commands.Auto;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.TestingDashboard;
 import frc.robot.commands.DriveDistance;
-import frc.robot.commands.DriveDistanceCheck;
 import frc.robot.commands.GyroTurn;
 import frc.robot.subsystems.Auto;
 
