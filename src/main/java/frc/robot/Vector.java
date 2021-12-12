@@ -24,6 +24,15 @@ public class Vector {
         return result;
     }
 
+    // Method to project vector A onto vector B
+    public static Vector proj(Vector a, Vector b) {
+        Vector result = new Vector(b.x, b.y);
+        double a_dot_b = dot(a, b);
+        double mag_b = mag(b);
+        multScalar(result, (a_dot_b) / (mag_b * mag_b));
+        return result;
+    }
+
     public static void addScalar(Vector a, double s) {
         a.x += s;
         a.y += s;
