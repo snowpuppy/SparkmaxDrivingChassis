@@ -6,8 +6,8 @@ package frc.robot;
 
 /** Add your docs here. */
 public class Vector {
-    private double x;
-    private double y;
+    public double x;
+    public double y;
 
     public Vector() {
         x = 0;
@@ -30,6 +30,13 @@ public class Vector {
         double a_dot_b = dot(a, b);
         double mag_b = mag(b);
         multScalar(result, (a_dot_b) / (mag_b * mag_b));
+        return result;
+    }
+
+    public static Vector unit(Vector a) {
+        Vector result = new Vector(a.x,a.y);
+        double mag_a = mag(a);
+        divScalar(result,mag_a);
         return result;
     }
 

@@ -14,9 +14,10 @@ import edu.wpi.first.hal.HALUtil;
 import edu.wpi.first.wpilibj.SerialPort;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
+import frc.robot.AccelerometerHelper;
 import frc.robot.RobotMap;
 import frc.robot.TestingDashboard;
+import frc.robot.Vector;
 
 import com.analog.adis16470.frc.ADIS16470_IMU;
 import edu.wpi.first.wpilibj.Timer;
@@ -27,16 +28,11 @@ public class Drive extends SubsystemBase {
   private CANEncoder m_rightEncoder1;
   private CANEncoder m_leftEncoder1;
   private ADIS16470_IMU m_imu;
-  private double[] accelValues;
-  private double[] timeValues;
-  private double[] velocityValues;
-  private double[] distanceValues;
-  private double xDirection;
-  private double yDirection;
+
+
+  private AccelerometerHelper m_accelHelper;
   private boolean m_measureVelocity;
   private boolean m_measureDistance;
-  
-  
 
   private static Drive m_drive;
 
@@ -73,10 +69,8 @@ public class Drive extends SubsystemBase {
     m_leftEncoder1 = m_leftMotor1.getEncoder();
     m_rightEncoder1 = m_rightMotor1.getEncoder();
 
-    accelValues = new double[2];
-    timeValues = new double[2];
-    velocityValues = new double[2];
-    distanceValues = new double[2];
+    // Initialize the accelerometer heler
+    m_accelHelper = new AccelerometerHelper(m_imu);
 
     m_measureVelocity = false;
     m_measureDistance = false;
@@ -179,39 +173,25 @@ public class Drive extends SubsystemBase {
   }
 
   public void setInitialVelocity(double velocity) {
-    velocityValues[0] = velocity;
+    m_accelHelper.initializeVelocity(velocity);
   }
 
   public void setInitialDistance(double distance) {
-    distanceValues[0] = distance;
-  }
-
-  public void updateXYDirections() {
-    double angle = m_imu.getAngle(); 
-    angle = Math.toRadians(angle);
-    xDirection = Math.cos(angle);
-    yDirection = Math.sin(angle);
+    m_accelHelper.initializeDistance(distance);
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    m_drive.updateXYDirections();
-    accelValues[0] = accelValues[1];
-    accelValues[1] = -1 * m_drive.getAccelerometerMagnitude(); // assume always slowing down
-    timeValues[0] = timeValues[1];
-    timeValues[1] = Timer.getFPGATimestamp();
+    m_accelHelper.updateDirectionOfRobot();
+    m_accelHelper.captureAccelerometerData();
 
     if (m_measureVelocity) {
-      double oldVelocity = velocityValues[0];
-      velocityValues[0] = velocityValues[1];
-      velocityValues[1] = oldVelocity + integrate(timeValues[0], timeValues[1], accelValues[0], accelValues[1]);
+      m_accelHelper.calculateVelocity();
     }
 
     if (m_measureDistance) {
-      double oldDistance = distanceValues[0];
-      distanceValues[0] = distanceValues[1];
-      distanceValues[1] = oldDistance + integrate(timeValues[0], timeValues[1], velocityValues[0], velocityValues[1]);
+      m_accelHelper.calculateDistance();
     }
 
     TestingDashboard.getInstance().updateNumber(m_drive, "RightMotorDistance", getrightMotorPosition());
@@ -219,8 +199,8 @@ public class Drive extends SubsystemBase {
     TestingDashboard.getInstance().updateNumber(m_drive, "RightMotorSpeed", m_rightMotor1.get());
     TestingDashboard.getInstance().updateNumber(m_drive, "LeftMotorSpeed", m_leftMotor1.get());
     TestingDashboard.getInstance().updateNumber(m_drive, "CurrentAngle", m_imu.getAngle());
-    TestingDashboard.getInstance().updateNumber(m_drive, "instantAccel", accelValues[1]);
-    TestingDashboard.getInstance().updateNumber(m_drive, "currentTime", timeValues[1]);
+    TestingDashboard.getInstance().updateNumber(m_drive, "instantAccel", m_accelHelper.getAccelerometerMagnitude());
+    TestingDashboard.getInstance().updateNumber(m_drive, "currentTime", m_accelHelper.getCurrentTime());
 
     CANEncoder leftEncoder = m_drive.getLeftEncoder();
     CANEncoder rightEncoder = m_drive.getRightEncoder();
@@ -228,8 +208,6 @@ public class Drive extends SubsystemBase {
     TestingDashboard.getInstance().updateNumber(m_drive, "rightVelocity", rightEncoder.getVelocity());
     //TestingDashboard.getInstance().updateNumber(m_drive, "actualDistance", m_drive.getrightMotorPosition());
     //TestingDashboard.getInstance().updateNumber(m_drive, "stoppingDistance", m_drive.getrightMotorPosition() - TestingDashboard.getInstance().getNumber(m_drive, "drivingDistance"));
-
-
   }
   
   public void setRightMotorSpeed(double speed){
