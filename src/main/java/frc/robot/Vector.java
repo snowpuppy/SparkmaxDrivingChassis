@@ -6,8 +6,8 @@ package frc.robot;
 
 /** Add your docs here. */
 public class Vector {
-    private double x;
-    private double y;
+    public double x;
+    public double y;
 
     public Vector() {
         x = 0;
@@ -21,6 +21,22 @@ public class Vector {
 
     public static double dot(Vector a, Vector b) {
         double result = a.x * b.x + a.y * b.y;
+        return result;
+    }
+
+    // Method to project vector A onto vector B
+    public static Vector proj(Vector a, Vector b) {
+        Vector result = new Vector(b.x, b.y);
+        double a_dot_b = dot(a, b);
+        double mag_b = mag(b);
+        multScalar(result, (a_dot_b) / (mag_b * mag_b));
+        return result;
+    }
+
+    public static Vector unit(Vector a) {
+        Vector result = new Vector(a.x,a.y);
+        double mag_a = mag(a);
+        divScalar(result,mag_a);
         return result;
     }
 
