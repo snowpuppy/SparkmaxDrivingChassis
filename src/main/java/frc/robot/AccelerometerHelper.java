@@ -4,6 +4,7 @@ import com.analog.adis16470.frc.ADIS16470_IMU;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Vector;
+import frc.robot.subsystems.Drive;
 
 public class AccelerometerHelper {
 
@@ -16,14 +17,21 @@ public class AccelerometerHelper {
 
     private ADIS16470_IMU m_imu;
 
+    public final static double ACCEL_STATIONARY_MAX = 18.5;
+    public final static double ACCEL_STATIONARY_MIN = 14;
+    public final static double ACCEL_STATIONARY_RANGE_DIV_TWO = 0.0390954238;
+    public final static double GRAVITY_TO_INCHES_PER_SECOND_SQUARED = 386.088583;
+  
+
     public AccelerometerHelper(ADIS16470_IMU imu) {
         m_imu = imu;
         
         // Solution using vectors
         robotDirection = new Vector();
-        accelVec = new Vector[2];
-        velocityVec = new Vector[2];
-        distanceVec = new Vector[2];
+        accelVec = new Vector[] {new Vector(), new Vector()};
+        velocityVec = new Vector[] {new Vector(), new Vector()};
+        distanceVec = new Vector[] {new Vector(), new Vector()};
+        timeValues = new double[2];
     }
 
     public static double integrate(double tInitial, double tFinal, double vInitial, double vFinal) { // v for value
@@ -47,11 +55,16 @@ public class AccelerometerHelper {
     public void captureAccelerometerData() {
         // Eliminate the oldest value and move
         // the second oldest value back one
-        accelVec[0].x = accelVec[1].x;
+        accelVec[0].x = accelVec[1].x; // unit: gravity
         accelVec[0].y = accelVec[1].y;
         // Capture the new value
-        accelVec[1].x = m_imu.getAccelInstantX();
+        accelVec[1].x = m_imu.getAccelInstantX(); // unit: gravity
         accelVec[1].y = m_imu.getAccelInstantY();
+
+        Drive drive = Drive.getInstance();
+        TestingDashboard.getInstance().updateNumber(drive, "xInstantAccel", accelVec[1].x);
+        TestingDashboard.getInstance().updateNumber(drive, "yInstantAccel", accelVec[1].y);
+        
     }
 
     public void resetVelocity() {
@@ -95,18 +108,33 @@ public class AccelerometerHelper {
         distanceVec[1].y = oldDistance.y + integrate(timeValues[0], timeValues[1], velocityVec[0].y, velocityVec[1].y);
     }
 
-    public double getAccelerometerMagnitude() {
+    public double getAccelerometerMagnitudeGravity() {
         double result = Vector.mag(accelVec[1]);
         return result;
     }
 
-    public double getVelocityMagnitude() {
+    public double getAccelerometerMagnitudeInchesPerSecondSquared() {
+        double result = Vector.mag(accelVec[1]) * GRAVITY_TO_INCHES_PER_SECOND_SQUARED;
+        return result;
+    }
+
+    public double getVelocityMagnitudeGravity() {
         double result = Vector.mag(velocityVec[1]);
         return result;
     }
 
-    public double getDistanceMagnitued() {
+    public double getVelocityMagnitudeInchesPerSecondSquared() {
+        double result = Vector.mag(velocityVec[1]) * GRAVITY_TO_INCHES_PER_SECOND_SQUARED;
+        return result;
+    }
+
+    public double getDistanceMagnitudeGravity() {
         double result = Vector.mag(distanceVec[1]);
+        return result;
+    }
+
+    public double getDistanceMagnitudeInchesPerSecondSquared() {
+        double result = Vector.mag(distanceVec[1]) * GRAVITY_TO_INCHES_PER_SECOND_SQUARED;
         return result;
     }
 

@@ -33,6 +33,8 @@ public class Drive extends SubsystemBase {
   private AccelerometerHelper m_accelHelper;
   private boolean m_measureVelocity;
   private boolean m_measureDistance;
+  private double accelIntCount = 0;
+  
 
   private static Drive m_drive;
 
@@ -133,19 +135,16 @@ public class Drive extends SubsystemBase {
       TestingDashboard.getInstance().registerNumber(m_drive, "DriveDistance", "drivingSpeed", Drive.INITIAL_SPEED);
       TestingDashboard.getInstance().registerNumber(m_drive, "DriveDistance", "drivingDistance", Drive.INITIAL_DISTANCE);
       TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "instantAccel", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "xInstantAccel", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "yInstantAccel", 0);
       TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "currentTime", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Acceleration", "instantVel", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Acceleration", "instantDist", 0);
       
     }
     return m_drive;
   }
 
-
-  public double getAccelerometerMagnitude() {
-    double x = m_imu.getAccelInstantX();
-    double y = m_imu.getAccelInstantY();
-    double magnitude = Math.sqrt(x*x + y*y);
-    return magnitude;
-  }
 
   public static double integrate(double tInitial, double tFinal, double vInitial, double vFinal) { // v for value
     double tInterval = tFinal - tInitial;
@@ -183,8 +182,18 @@ public class Drive extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+
     m_accelHelper.updateDirectionOfRobot();
     m_accelHelper.captureAccelerometerData();
+    accelIntCount += 1;
+
+    if (accelIntCount > 2) {
+      m_measureVelocity = true;
+    }
+
+    if (accelIntCount > 4) {
+      m_measureDistance = true;
+    }
 
     if (m_measureVelocity) {
       m_accelHelper.calculateVelocity();
@@ -199,8 +208,9 @@ public class Drive extends SubsystemBase {
     TestingDashboard.getInstance().updateNumber(m_drive, "RightMotorSpeed", m_rightMotor1.get());
     TestingDashboard.getInstance().updateNumber(m_drive, "LeftMotorSpeed", m_leftMotor1.get());
     TestingDashboard.getInstance().updateNumber(m_drive, "CurrentAngle", m_imu.getAngle());
-    TestingDashboard.getInstance().updateNumber(m_drive, "instantAccel", m_accelHelper.getAccelerometerMagnitude());
+    TestingDashboard.getInstance().updateNumber(m_drive, "instantAccel", m_accelHelper.getAccelerometerMagnitudeInchesPerSecondSquared());
     TestingDashboard.getInstance().updateNumber(m_drive, "currentTime", m_accelHelper.getCurrentTime());
+
 
     CANEncoder leftEncoder = m_drive.getLeftEncoder();
     CANEncoder rightEncoder = m_drive.getRightEncoder();
@@ -275,7 +285,6 @@ public class Drive extends SubsystemBase {
    }
 
  
-
 
    public void setIdleMode(IdleMode mode) {
      SmartDashboard.putString("Brake Mode", mode == IdleMode.kBrake? "Brake":"Coast");
