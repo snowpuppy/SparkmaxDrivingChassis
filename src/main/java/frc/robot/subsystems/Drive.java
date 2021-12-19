@@ -184,6 +184,7 @@ public class Drive extends SubsystemBase {
     // This method will be called once per scheduler run
 
     m_accelHelper.updateDirectionOfRobot();
+    m_accelHelper.captureTimeData();
     m_accelHelper.captureAccelerometerData();
     accelIntCount += 1;
 
