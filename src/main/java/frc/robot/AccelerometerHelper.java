@@ -21,7 +21,12 @@ public class AccelerometerHelper {
     public final static double ACCEL_STATIONARY_MIN = 14;
     public final static double ACCEL_STATIONARY_RANGE_DIV_TWO = 0.0390954238;
     public final static double GRAVITY_TO_INCHES_PER_SECOND_SQUARED = 386.088583;
-  
+    public final static double ACCEL_X_REST_AVERAGE = 0.026546; // unit: gravity
+    public final static double ACCEL_X_REST_AVERAGED_MAX = 0.005; // unit: gravity
+    public final static double ACCEL_X_REST_AVERAGED_MIN = -0.0045; // unit: gravity
+    public final static double ACCEL_Y_REST_AVERAGE = -0.032664; // unit: gravity
+    public final static double ACCEL_Y_REST_AVERAGED_MAX = 0.0045; // unit: gravity
+    public final static double ACCEL_Y_REST_AVERAGED_MIN = -0.005; // unit: gravity
 
     public AccelerometerHelper(ADIS16470_IMU imu) {
         m_imu = imu;
@@ -53,19 +58,39 @@ public class AccelerometerHelper {
     }
 
     public void captureAccelerometerData() {
+        double xRaw = 0;
+        double yRaw = 0;
         // Eliminate the oldest value and move
         // the second oldest value back one
         accelVec[0].x = accelVec[1].x; // unit: gravity
         accelVec[0].y = accelVec[1].y;
         // Capture the new value
-        accelVec[1].x = m_imu.getAccelInstantX(); // unit: gravity
-        accelVec[1].y = m_imu.getAccelInstantY();
+        xRaw = m_imu.getAccelInstantX(); // unit: gravity
+        yRaw = m_imu.getAccelInstantY();
+
+        // Subtract center of mass (average) of data to center noise around zero
+        accelVec[1].x = xRaw - ACCEL_X_REST_AVERAGE;
+        accelVec[1].y = yRaw - ACCEL_Y_REST_AVERAGE;
+
+        // Create dead band based on max and min of averaged at-rest data for X
+        if (accelVec[1].x < ACCEL_X_REST_AVERAGED_MAX && accelVec[1].x > ACCEL_X_REST_AVERAGED_MIN) {
+            accelVec[1].x = 0;
+        }
+
+        // Create dead band based on max and min of averaged at-rest data for Y
+        if (accelVec[1].y < ACCEL_Y_REST_AVERAGED_MAX && accelVec[1].y > ACCEL_Y_REST_AVERAGED_MIN) {
+            accelVec[1].y = 0;
+        }
 
         Drive drive = Drive.getInstance();
         TestingDashboard.getInstance().updateNumber(drive, "xInstantAccel", accelVec[1].x);
         TestingDashboard.getInstance().updateNumber(drive, "yInstantAccel", accelVec[1].y);
+        TestingDashboard.getInstance().updateNumber(drive, "xInstantAccelRaw", xRaw);
+        TestingDashboard.getInstance().updateNumber(drive, "yInstantAccelRaw", yRaw);
         
     }
+
+
 
     public void resetVelocity() {
         initializeVelocity(0);

@@ -137,6 +137,8 @@ public class Drive extends SubsystemBase {
       TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "instantAccel", 0);
       TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "xInstantAccel", 0);
       TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "yInstantAccel", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "xInstantAccelRaw", 0);
+      TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "yInstantAccelRaw", 0);
       TestingDashboard.getInstance().registerNumber(m_drive, "Accelerometer", "currentTime", 0);
       TestingDashboard.getInstance().registerNumber(m_drive, "Acceleration", "instantVel", 0);
       TestingDashboard.getInstance().registerNumber(m_drive, "Acceleration", "instantDist", 0);
